@@ -1,0 +1,34 @@
+server:
+  port: 8001
+ 
+mybatis:
+  config-location: classpath:mybatis/mybatis.cfg.xml
+  type-aliases-package: com.gujiangbo.springcloud.entities
+  mapper-locations:
+  - classpath:mybatis/mapper/**/*.xml
+
+spring:
+  datasource:
+    username: gujiangbo
+    password: 123456
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://172.16.121.130:3306/webapp?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT
+    dbcp2:
+      max-idle: 20    #数据库连接池最大的维持连接数
+      min-idle: 5     #数据库连接池最小的维持连接数
+      max-total: 30   #数据库连接池最大的连接总数
+      initial-size: 5 #数据库连接池初始化连接数
+  application:
+    name: microservicecloud-dept
+# 将本微服务注册进入eureka 
+eureka:
+  client: #客户端注册进eureka服务列表内
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka/,http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
+  instance: #修改Status
+    instance-id: microservicecloud-dept8001 # 自定义服务名称信息
+    prefer-ip-address: true # 访问路径可以显示ip地址
+
+info:
+  app.name: gujiangbo-microservicecloud
+  app.message: 这是一个dept服务提供商
