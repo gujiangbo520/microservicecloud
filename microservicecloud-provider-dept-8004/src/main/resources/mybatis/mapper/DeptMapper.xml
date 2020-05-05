@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gujiangbo.springcloud.mapper.DeptMapper">
+	<insert id="insertDept" parameterType="Dept">
+		insert into dept(dname,db_source) values (#{dname},database())
+	</insert>
+	<select id="findAllDept" resultType="com.gujiangbo.springcloud.entities.Dept">
+		select deptno,dname,db_source from dept
+	</select>
+	<select id="findDeptById" resultType="com.gujiangbo.springcloud.entities.Dept">
+		select deptno,dname,db_source from dept where deptno=#{deptno}
+	</select>
+</mapper>
