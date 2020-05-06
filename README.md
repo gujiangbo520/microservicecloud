@@ -23,11 +23,165 @@ Hystrix能做什么？
 >服务降级、服务熔断、服务监控、服务限流等
 
 ### 服务熔断
+什么是服务熔断？
+>熔断机制是应对雪崩效应的一种微服务链路保护机制.
+>当扇出链路某个微服务不可用或者响应时间不长时，会进行服务的降级，**进而熔断该节点微服务的调用，快速返回“错误”的响应信息** 即Fallback。当检测到该节点微服务调用响应正常后恢复调用链路。在SpringCloud框架里熔断机制通过Hystrix实现。Hystrix会监控微服务之间的调用情况。当失败的调用到达一定的阈值，缺省是5s内20次调用失败就会启动熔断机制。熔断机制的注解是：**@HystrixCommand**
 
+服务熔断simple
+pom.xml添加支持hystrix jar
+```xml
+<!-- 引入hystrix 熔断器 -->
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+	<version>1.4.7.RELEASE</version>
+</dependency>
+```
+java 主要代码如下:
+```java
+public class DeptController{
+  /**
+     * 模拟熔断机制
+     * @HystrixCommand(fallbackMethod = "processHystrix_Get")
+     *
+     * @param id
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/findDeptById", method = RequestMethod.POST)
+    @HystrixCommand(fallbackMethod = "processHystrix_Get")
+    public String findDeptById(@RequestBody String id) {
+        debugLog.info("根据部门ID查询部门");
+        debugLog.info("请求参数:" + id);
+        Dept dept = new Dept();
+        try {
+            dept = deptService.getDeptById(Long.valueOf(id));
+        } catch (Exception e) {
+            debugLog.error("数据处理异常!", e);
+        }
+        if(null == dept){
+            throw new RuntimeException("未找到对应信息");
+        }
+        return JSONObject.toJSONString(dept);
+    }
+    /**
+     * hystrix 熔断机制模拟调用的方法
+     * 只要在@HystrixCommand(fallbackMethod = "processHystrix_Get")注解方法上 出现异常等信息才调用
+     * @param id
+     * @return
+     */
+    public String processHystrix_Get(@RequestBody String id) {
+        debugLog.info("开始调用熔断方法!");
+        return "这是一个熔断方法！！！！";
+    }
+}
+ 
+```
+在Application启动类中添加@EnableHystrix注解
+```java
+package com.gujiangbo.springcloud;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.netflix.hystrix.EnableHystrix;
+import org.springframework.scheduling.annotation.EnableAsync;
 
-
+/**
+ * @author gujiangbo
+ */
+@EnableDiscoveryClient //开启服务发现
+@EnableEurekaClient //开启eureka客户端
+@MapperScan(basePackages = { "com.gujiangbo.springcloud.mapper" })
+@SpringBootApplication
+@EnableAsync
+@EnableHystrix//开启服务熔断功能
+public class DeptProvider8001_Hystrix_App extends SpringBootServletInitializer implements CommandLineRunner {
+	private Log debugLog = LogFactory.getLog(DeptProvider8001_Hystrix_App.class);
+	public static void main(String[] args) {
+		SpringApplication.run(DeptProvider8001_Hystrix_App.class, args);
+	}
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+		return builder.sources(new Class[] { DeptProvider8001_Hystrix_App.class });
+	}
+	@Override
+	public void run(String... args) throws Exception {
+		debugLog.info("=========system of deptProvider Hystrix start info !============");
+		debugLog.debug("=========system of deptProvider Hystrix start debug !============");
+	}
+}
+```
+当业务调用findDeptById方法，传入id不存在的编号时会抛出一个异常信息，Hystrix 检测到异常信息会触发服务熔断机制，调用**fallbackMethod **中定义的processHystrix_Get方法，也就是说processHystrix_Get方法是调用findDeptById 出现异常后的后备方法。
 
 ### 服务降级
+什么是服务降级？
+>整体资源快不够用了，忍痛将某些服务先关掉，待度过难关，在开启回来。
+所谓降级，就是一般是从整体符合考虑，就是当某个服务熔断之后，服务器将不再被调用，此刻客户端可以自己准备一个本地的fallback回调，返回一个缺省值，这样做，虽然服务水平下降，但好歹可用，比直接挂掉要强。
+
+代码演示：
+修改服务接口的提供者项目(microservicecloud-api)，让service接口实现一个FallbackFactory接口类DeptClientServiceFallbackFactory
+**注意：直接在接口定义的熔断机制中进行服务熔断，之前在controller上的@HystrixCommand(fallbackMethod=”methodName”)将弃用**
+```java
+@Component//不要忘记添加
+public class DeptClientServiceFallbackFactory implements FallbackFactory<DeptClientService> {
+    @Override
+    public DeptClientService create(Throwable throwable) {
+        return new DeptClientService() {
+            @Override
+            public Dept get(long id) {
+                Dept dept = new Dept();
+                dept.setDeptno(id);
+                dept.setDname("该ID：" + id + "没有对应的信息，Consumer客户端提供的信息，此服务Provider已关闭");
+                dept.setDb_source("no this database in mysql");
+                return dept;
+            }
+            @Override
+            public List<Dept> list() {
+                return null;
+            }
+            @Override
+            public boolean add(Dept dept) {
+                return false;
+            }
+        };
+    }
+}
+```
+修改提供服务的service熔断处理的机制
+此处是在公共的service对某个service的方法访问进行统一的fallback处理
+```java
+@FeignClient(value = "MICROSERVICECLOUD-DEPT",fallbackFactory = DeptClientServiceFallbackFactory.class)
+public interface DeptClientService {
+    @RequestMapping(value = "/dept/get/{id}", method = RequestMethod.GET)
+    public Dept get(@PathVariable("id") long id);
+    @RequestMapping(value = "/dept/list", method = RequestMethod.GET)
+    public List<Dept> list();
+    @RequestMapping(value = "/dept/add}", method = RequestMethod.POST)
+    public boolean add(Dept dept);
+}
+```
+修改负载均衡项目的yml
+>新增加配置项到microservicecloud-consumer-dep-feign
+
+```yaml
+feign:
+  hystrix:
+    enabled: true
+```
+测试：1、先启动3个eureka2、启动microservicecloud-provider-dept-8001,3、启动microservicecloud-consumer-dept-feign
+
+
+
+
+
+
 ### 服务监控hystrixDashboard
 
 ## zuul 路由网关
