@@ -230,7 +230,7 @@ public class DeptConsumer_DashBoard_App {
 测试：
 >1、启动dashboard监控微服务http://localhost:9001/hystrix
 
-![DashBoard](https://github.com/gujiangbo520/microservicecloud/blob/master/image/hystrix-dashboard.png "DashBoard")
+![DashBoard](https://img-blog.csdn.net/20180722190306219?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "DashBoard")
 >2、然后启动3个集群服务，启动microservicecloud-provider-dept-hystrix-8001
 输入访问地址：http://localhost:8001/hystrix.stream
 
