@@ -1,26 +1,18 @@
 package com.gujiangbo.springcloud.controller;
 
-import java.util.HashMap;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gujiangbo.springcloud.entities.Dept;
+import com.gujiangbo.springcloud.service.DeptService;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.cloud.config.client.ConfigClientProperties;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gujiangbo.springcloud.entities.Dept;
-import com.gujiangbo.springcloud.service.DeptService;
+import java.util.List;
 
 @RestController
 public class DeptController {
@@ -54,8 +46,16 @@ public class DeptController {
         return resultMessage;
     }
 
+    /**
+     * 模拟熔断机制
+     * @HystrixCommand(fallbackMethod = "processHystrix_Get")
+     *
+     * @param id
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value = "/findDeptById", method = RequestMethod.POST)
+    @HystrixCommand(fallbackMethod = "processHystrix_Get")
     public String findDeptById(@RequestBody String id) {
         debugLog.info("根据部门ID查询部门");
         debugLog.info("请求参数:" + id);
@@ -65,13 +65,21 @@ public class DeptController {
         } catch (Exception e) {
             debugLog.error("数据处理异常!", e);
         }
-        /**
-         * 模拟 hystrix 熔断机制
-         */
         if(null == dept){
-            throw new RuntimeException("查无数据");
+            throw new RuntimeException("未找到对应信息");
         }
         return JSONObject.toJSONString(dept);
+    }
+
+    /**
+     * hystrix 熔断机制模拟调用的方法
+     * 只要在@HystrixCommand(fallbackMethod = "processHystrix_Get")注解方法上 出现异常等信息才调用
+     * @param id
+     * @return
+     */
+    public String processHystrix_Get(@RequestBody String id) {
+        debugLog.info("开始调用熔断方法!");
+        return "这是一个熔断方法！！！！";
     }
 
     @ResponseBody

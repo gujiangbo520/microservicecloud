@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author gujiangbo
  */
-@FeignClient(value = "MICROSERVICECLOUD-DEPT")//定义feign 负载均衡
+@FeignClient(value = "MICROSERVICECLOUD-DEPT",fallbackFactory = DeptClientServiceFallbackFactory.class)//定义feign 负载均衡
 public interface DeptClientService {
 
     @RequestMapping(value = "/insertDept", method = RequestMethod.POST)
