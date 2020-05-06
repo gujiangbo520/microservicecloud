@@ -239,9 +239,14 @@ public class DeptConsumer_DashBoard_App {
 会看到以下监控内容
 ![dashboard_show](https://github.com/gujiangbo520/microservicecloud/blob/master/image/dashboard_show.png "dashboard_show")
 
+>Deplay 该参数用来控制服务器上轮询监控信息的延迟时间，默认是2000毫秒，可以通过配置该属性来降低客户端的网络和cpu消耗。
+
+>Title该参数对应了头部标题Hystrix Stream之后的内容，默认会使用哦具体监控实例的URL，可疑通过配置该信息来展示更合适的标题。
+
 
 ## zuul 路由网关
 
 ## SpringCloud Config SpringCloud 配置中心 
+
 
 
