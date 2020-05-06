@@ -10,5 +10,12 @@
     </parent>
     <!-- 当前Module的名称 -->
     <artifactId>microservicecloud-api</artifactId>
-    <build />
+    <dependencies>
+        <!-- 添加feign 相关支持-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-feign</artifactId>
+        </dependency>
+
+    </dependencies>
 </project>

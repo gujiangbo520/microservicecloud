@@ -12,7 +12,7 @@ spring:
     username: gujiangbo
     password: 123456
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://172.16.121.130:3306/webapp?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT
+    url: jdbc:mysql://172.16.121.130:3306/springcloud3?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT
     dbcp2:
       max-idle: 20    #数据库连接池最大的维持连接数
       min-idle: 5     #数据库连接池最小的维持连接数
