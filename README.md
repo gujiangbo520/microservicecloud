@@ -237,7 +237,7 @@ public class DeptConsumer_DashBoard_App {
 >3、在9001的监控界面输入要监控的微服务（http://localhost:8001/hystrix.stream）
 
 会看到以下监控内容
-![dashboard_show](https://github.com/gujiangbo520/microservicecloud/blob/master/image/dashboard_show.png "dashboard_show")
+![dashboard_show](https://img-blog.csdn.net/20180722202703747?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "dashboard_show")
 
 >Deplay 该参数用来控制服务器上轮询监控信息的延迟时间，默认是2000毫秒，可以通过配置该属性来降低客户端的网络和cpu消耗。
 
