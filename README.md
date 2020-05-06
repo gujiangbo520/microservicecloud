@@ -243,10 +243,96 @@ public class DeptConsumer_DashBoard_App {
 
 >Title该参数对应了头部标题Hystrix Stream之后的内容，默认会使用哦具体监控实例的URL，可疑通过配置该信息来展示更合适的标题。
 
-
 ## zuul 路由网关
+什么是zuul?
+>Zuul包含了对请求的**路由和过滤**两个主要的功能。
+>其中路由功能负责将外部请求转发到具体的微服务实例上，是实现外部访问统一的入口的基础而过滤器功能则负责对请求的处理过程进行干预，是实现请求校验、服务聚合等功能的基础。Zuul和Eureka进行整合，将Zuul自身注册为Eureka服务治理下的应用，同时从Eureka中获取其他微服务的消息，也即以后访问微服务都是通过Zuul跳转获得。
+
+注意：Zuul服务最终还是会注册进Eureka
+**Zuul提供了代理、路由、过滤三大功能**
+
+环境搭建过程
+>新建项目microservicecloud-zuul-gateway-9527
+>新增加系统映射域名
+Windows对应的位置是：C:\Windows\System32\drivers\etc\hosts
+Linux对应的是：/etc/hosts
+127.0.0.1      myzuul.com
+
+pom核心文件
+```xml
+<-- zuul路由网关 -->
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-zuul</artifactId>
+</dependency>
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-starter-eureka</artifactId>
+</dependency>
+```
+yml文件
+```yaml
+server:
+  port: 9527
+spring:
+  application:
+    name: microservicecloud-zuul-gateway
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka,http://eureka7002.com:7002/eureka,http://eureka7003.com:7003/eureka
+  instance:
+    instance-id: gateway-9527.com
+    prefer-ip-address: true
+info:
+  app.name: atguigu-microcloud
+  company.name: www.atguigu.com
+  build.artifactId: $project.artifactId$
+  build.version: $project.version$
+```
+新增加主启动类，添加@EnableZuulProxy
+```java
+@EnableZuulProxy
+@SpringBootApplication
+public class Zuul_9527_StartSpringCloudApp {
+    public static void main(String[] args) {
+        SpringApplication.run(Zuul_9527_StartSpringCloudApp.class, args);
+    }
+}
+```
+测试
+>启动三个eureka集群,一个microservicecloud-provider-dept-8001，启动路由网关微服务
+```html
+使用路由：http://localhost:8001/dept/get/2
+启用路由：http://myzuul.com:9527/microservicecloud-dept/dept/get/2
+```
+![image1](https://img-blog.csdn.net/20180722204101285?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image1")
+![image2](https://img-blog.csdn.net/20180722204110313?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image2")
+![image3](https://img-blog.csdn.net/20180722204137281?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image3")
+路由访问映射规则
+>修改microservicecloud-zuul-gateway-9527项目的yml文件：新增加以下内容
+```yaml
+# 路由映射
+zuul:
+  prefix: /atguigu #增加统一的访问前缀
+  #此处添加ignored-services的意义是忽略通过服务名可以访问微服务(添加完成之后不能通过服务名访问微服务)
+  ignored-services:  microservicecloud-dept
+  #ignored-services:  microservicecloud-dept
+  routes:
+    mydept.serviceId: microservicecloud-dept
+    mydept.path: /mydept/**
+```
+**ignored-services:特别注意此处的配置。通过配置此选项，限制不能通过访问服务名去访问微服务**
+如果想把其他很多的微服务都通过配置忽略掉真实访问路径则直接使用”*”来代替
+修改后，实际的访问地址是以下地址：
+```yaml
+http://myzuul.com:9527/microservicecloud-dept/dept/get/2(原始)
+http://myzuul.com:9527/mydept/dept/get/2(修改后)
+```
+![image4](https://img-blog.csdn.net/20180722204515831?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image4")
 
 ## SpringCloud Config SpringCloud 配置中心 
+
 
 
 
