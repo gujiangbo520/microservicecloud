@@ -175,16 +175,73 @@ feign:
   hystrix:
     enabled: true
 ```
-测试：1、先启动3个eureka2、启动microservicecloud-provider-dept-8001,3、启动microservicecloud-consumer-dept-feign
+测试：1、先启动3个eureka2、启动microservicecloud-provider-dept-8001,3、启动microservicecloud-consumer-dept-feign<br>
+服务熔断和服务降级区别
+>服务熔断：一般是某个服务故障或者异常引起的，类似于现实世界中的“保险丝”,当某个异常条件被触发，直接熔断整个服务，而不是一直等到此服务超时。
 
-
-
-
-
+>服务降级：所谓降级，一般是从整体负荷考虑，就是当某个服务熔断之后，服务器将不再调用，此时客户端可以自己准备一个本地的fallback回调，返回一个缺省值。这样做，虽然服务水平下降，但好歹可用，比直接挂掉强。
 
 ### 服务监控hystrixDashboard
+服务监控描述
+>除了隔离依赖服务的调用之外，Hystrix还提供了**准实时的调用监控(Hystrix Dashboard) **, Hystrix会持续地记录所有通过Hystrix发起的请求的执行信息，并以统计报表的形式展示给客户。包括每秒执行多少请求，有多少成功多少失败的等。Netflix通过hystrix-metrics-event-stream项目实现对以上指标的监控。SpringCloud 也提供了Hystrix Dashboard 的整合，对监控内容转化可视化界面。
+
+核心文件介绍
+1、新建项目
+>microservicecloud-consumer-hystrix-dashboard
+
+pom文件的修改
+```xml
+<!-- hystrix和 hystrix-dashboard相关 -->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-hystrix</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-hystrix-dashboard</artifactId>
+</dependency>
+```
+yml文件修改
+```yaml
+server:
+  port: 9001
+```
+主启动类添加EnableHystrixDashboard
+**@ EnableHystrixDashboard**开启仪表盘监控注解
+```java
+@SpringBootApplication
+@EnableHystrixDashboard
+public class DeptConsumer_DashBoard_App {
+    public static void main(String[] args) {
+        SpringApplication.run(DeptConsumer_DashBoard_App.class, args);
+    }
+}
+```
+微服务提供者添加监控jar
+>例如微服务提供者microservicecloud-provider-dept-8001/8002/8003
+添加以下jar包，才能被dashboard监控
+```xml
+<!-- actuator监控信息完善 -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+测试：
+>1、启动dashboard监控微服务http://localhost:9001/hystrix
+
+![DashBoard](https://github.com/gujiangbo520/microservicecloud/blob/master/image/hystrix-dashboard.png "DashBoard")
+>2、然后启动3个集群服务，启动microservicecloud-provider-dept-hystrix-8001
+输入访问地址：http://localhost:8001/hystrix.stream
+
+>3、在9001的监控界面输入要监控的微服务（http://localhost:8001/hystrix.stream）
+
+会看到以下监控内容
+![dashboard_show](https://github.com/gujiangbo520/microservicecloud/blob/master/image/dashboard_show.png "dashboard_show")
+
 
 ## zuul 路由网关
 
 ## SpringCloud Config SpringCloud 配置中心 
+
 
