@@ -331,7 +331,201 @@ http://myzuul.com:9527/mydept/dept/get/2(修改后)
 ```
 ![image4](https://img-blog.csdn.net/20180722204515831?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image4")
 
-## SpringCloud Config SpringCloud 配置中心 
+## SpringCloud Config SpringCloud 配置中心
+**架构图**
+![springCloud-config](https://img-blog.csdnimg.cn/20200507095116851.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zNzU0NzE5Nw==,size_16,color_FFFFFF,t_70 "springCloud-config")
+
+**SpringCloud Config 是什么？**
+>SpringCloud Config 为微服务架构中的微服务提供了集中化的外部配置支持，配置服务为各个不同微服务应用的所有环境提供了一个中心化的外部配置。
+
+**SpringCloud Config 怎么操作?**
+>SpringCLoud Config 分为服务端和客户端两部分<br />
+服务端也称为分布式配置中心，它是一个独立的微服务应用，用来连接配置服务器并为客户端提供获取配置的信息，加密/解密信息等访问接口<br />
+客户端则是通过指定的配置中心来管理应用资源，以及与业务相关的配置内容，并在启动的时候从配置中心获取和加载配置信息配置服务器默认采用git来存储配置信息，这样就有助于对环境配置进行版本管理，并且可以通过git客户端工具来方便的管理和访问配置内容。
+
+**SpringCloudConfig 能做什么？**
+* 集中管理配置文件
+* 不同环境不同的配置，动态化的配置更新，分环境部署比如dev/test/prod/release
+* 运行期间动态调整配置，不再需要在每个服务器部署的机器上编写配置文件，服务会向配置中心统一拉取配置自己的信息
+* 当配置发生变动时，服务不需要重启即可赶至到配置的变化并应用新的配置
+* 将配置信息以REST接口的形式暴露
+
+**SpringCloud Config与GitHub整合配置**
+>由于SpringCloud Config 默认使用Git来存储配置文件（也有其它方式，比如支持svn和本地文件)，但是最推荐的还是Git,而且使用的是http/https访问的形式
+
+### SpringCloud Config服务端配置步骤
+* 用自己的GitHub账号在GitHub上新建一个microservicecloud-config的新Repository
+* 由上一步获取ssh协议的git地址
+* 本地硬盘目录上新建git仓库并clone
+* 在本地的microservicecloud-config里面新建一个application.yml
+* 将上一步的yml文件推送到github上
+* 新建modue模块microservicecloud-config-3344,它即为Cloud的配置中心模块
+* pom文件增加依赖
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-config-server</artifactId>
+</dependency>
+```
+yml 文件
+```yaml
+server:
+  port: 3344
+spring:
+  application:
+    name: microservicecloud-config
+  cloud:
+    config:
+      server:
+        git:
+          #username:  xxxx
+          #password: xxxx
+          uri: https://github.com/gujiangbo520/microservicecloud-config.git #github上的原始地址
+```
+主启动类添加EnableConfigServer注解
+```java
+@SpringBootApplication
+@EnableConfigServer
+public class Config_3344_StartSpringCloudApp {
+    public static void main(String[] args) {
+        SpringApplication.run(Config_3344_StartSpringCloudApp.class, args);
+    }
+}
+```
+修改主机映射
+>Windows对应的位置是：C:\Windows\System32\drivers\etc\hosts
+Linux对应的是：/etc/hosts
+127.0.0.1 config-3344.com
+
+测试
+>启动微服务3344
+>访问http://config-3344.com:3344/application-dev.yml
+![springcloud-config-2](https://img-blog.csdn.net/20180728131138281?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "springcloud-config-2")
+
+###本地config搭建
+在本地的项目microservicecloud-config下创建microservicecloud-config-client.yml文件
+microservicecloud-config-client.yml内容如下：
+```yaml
+spring:
+  profiles:
+    active:
+      - dev
+---
+server:
+  port: 8201
+spring:
+  profile: dev
+  application:
+      name: microservicecloud-config-client
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-dev.com:7001/eureka/
+---
+server:
+  port: 8202
+spring:
+  profiles: test
+  application:
+    name:  microservicecloud-config-client
+eureka:
+  client:
+    service-url:
+        defaultZone:  http://eureka-test.com:7001/eureka/
+```
+然后上传到github上本人地址为https://github.com/gujiangbo520/microservicecloud-config
+
+###客户端的搭建
+>创建客户端modulemicroservicecloud-config-client-3355
+
+pom文件
+```yaml
+<!-- SpringCloud Config客户端 -->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+```
+>**Application.ym(是用户级的配置资源项)<br/>
+Bootstrap.yml(是系统级的，优先级更高)**
+
+创建bootstrap.yml文件
+```yaml
+spring:
+  cloud:
+    config:
+      name: microservicecloud-config-client # 需要从github上读取资源名称 注意没有yml
+      profile: dev # 本次访问的配置项
+      label:  master
+      uri:  http://config-3344.com:3344 # 本资源微服务启动后先去找3344号服务，通过SpringCloudConfig获取Github的服务地址
+```
+application.yml文件
+```yaml
+spring:
+  application:
+    name:  microservicecloud-config-client
+```
+host下添加映射文件
+>127.0.0.1 client-config.com
+
+新建controller类ConfigClientRest
+```java
+package com.atguigu.springcloud.rest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+@RestController
+public class ConfigClientRest
+{
+   @Value("${spring.application.name}")
+   private String applicationName;
+   @Value("${eureka.client.service-url.defaultZone}")
+   private String eurekaServers;
+   @Value("${server.port}")
+   private String port;
+   @RequestMapping("/config")
+   public String getConfig() {
+      String str = "applicationName: " + applicationName + "\t eurekaServers:" + eurekaServers + "\t port: " + port;
+      System.out.println("******str: " + str);
+      return "applicationName: " + applicationName + "\t eurekaServers:" + eurekaServers + "\t port: " + port;
+   }
+}
+```
+启动主动类
+```java
+@SpringBootApplication
+public class ConfigClient_3355_StartSpringCloudApp{
+   public static void main(String[] args) {
+      SpringApplication.run(ConfigClient_3355_StartSpringCloudApp.class, args);
+   }
+}
+```
+测试
+>启动config的服务器3344<br/>
+然后启动3355作为client准备访问
+
+测试1:
+>切换bootstrap.yml的访问配置项
+profile：dev(切换bootstrap.yml的访问配置项)
+              1、dev默认在github上对应的端口就是8201
+             2、http://client-config.com:8201/config
+
+![image3.jpg](https://img-blog.csdn.net/20180728132752293?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image3.jpg")
+Profile: test
+> 1、test默认在github上对应的端口就是8202
+2、http://client-config.com:8202/config
+
+![image4.jpg](https://img-blog.csdn.net/20180728132849571?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3d3dzEwNTY0ODExNjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70 "image4.jpg")
+
+
+
+
+
+
+
+
+
+
 
 
 
