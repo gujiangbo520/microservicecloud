@@ -12,6 +12,7 @@ import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 
 /**
+ *
  * @author gujiangbo
  */
 @EnableZuulProxy
